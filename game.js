@@ -1,4 +1,5 @@
-import { Engine, Unit } from './engine.js';
+import Engine from './engine.js';
+import Unit from './unit.js';
 
 const engine = new Engine(
 	document.getElementById('main-canvas'),
