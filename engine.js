@@ -11,14 +11,17 @@ export class Engine {
 		
 		this.onRender = this.onRender.bind(this);
 		
+		this.seconds = 0;
 		this.frame = -1;
+		
+		this.timeCallbacks = [];
 		
 		init(this)
 			.then(() =>
 				this.nextRenderID = requestAnimationFrame(
 					(ms) => {
 						// Set the initial millis first time around
-						this.millis = ms;
+						this._realMillis = ms;
 						this.onRender(ms);
 					}));
 	}
@@ -57,18 +60,38 @@ export class Engine {
 		});
 	}
 	
+	afterSeconds(secs) {
+		return new Promise(resolve => {
+			this.timeCallbacks.push({
+				time: this.seconds + secs,
+				callback: resolve,
+			});
+			this.timeCallbacks.sort(
+				(a, b) => a.time - b.time);
+		});
+	}
+	
 	addObject(obj) {
 		this.objects.push(obj);
 		return obj;
 	}
 	
-	onRender(ms) {
-		this.delta = (ms - this.millis) / 1000;
-		this.millis = ms;
+	onRender(realMillis) {
+		this.delta = Math.min(0.1,
+			(realMillis - this._realMillis) / 1000);
+		this._realMillis = realMillis;
+		
+		this.seconds += this.delta;
 		this.frame++;
+		
 		this.nextRenderID = requestAnimationFrame(this.onRender);
 		
 		const ctx = this.ctx;
+		
+		const firstTimeCallback = this.timeCallbacks[0];
+		if (firstTimeCallback && firstTimeCallback.time <= this.seconds) {
+			this.timeCallbacks.shift().callback();
+		}
 		
 		if (this.bgFill) {
 			ctx.fillStyle = this.bgFill;

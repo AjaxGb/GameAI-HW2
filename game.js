@@ -14,9 +14,7 @@ async function startup(engine) {
 	engine.bgFill = engine.ctx.createPattern(
 		engine.images.grass, 'repeat');
 	
-	engine.addObject(hunter);
-	engine.addObject(wolf);
-	engine.addObject(red);
+	runtime();
 }
 
 const hunter = new Unit('lumberjack',
@@ -32,3 +30,15 @@ const red = new Unit('red',
 	14);
 
 engine.ctx.imageSmoothingEnabled = false;
+
+async function runtime() {
+	engine.addObject(hunter);
+	
+	await engine.afterSeconds(5);
+	
+	engine.addObject(wolf);
+	
+	await engine.afterSeconds(5);
+	
+	engine.addObject(red);
+}
