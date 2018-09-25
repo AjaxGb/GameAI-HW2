@@ -33,16 +33,16 @@ export default class Engine {
 					})
 				
 				const keyHandler = (e) => {
-					if (event.type === 'keydown') {
-						if (this.keyStates[event.code] === true) return;
-						this.keyStates[event.code] = true;
+					if (e.type === 'keydown') {
+						if (this.keyStates[e.code] === true) return;
+						this.keyStates[e.code] = true;
 					}
-					if (event.type === 'keyup') {
-						if (this.keyStates[event.code] === false) return;
-						this.keyStates[event.code] = false;
+					if (e.type === 'keyup') {
+						if (this.keyStates[e.code] === false) return;
+						this.keyStates[e.code] = false;
 					}
 					
-					const action = event.type.substr(3);
+					const action = e.type.substr(3);
 					const callbacks = this.keyCallbacks[action][e.code];
 					if (!callbacks) return;
 					
