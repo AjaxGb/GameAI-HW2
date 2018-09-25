@@ -10,13 +10,22 @@
 			margin: 0;
 			padding: 0;
 			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
 		}
 		#main-canvas {
-			margin: auto;
 			width: 800px;
 			height: 512px;
 			image-rendering: crisp-edges;
 			image-rendering: pixelated;
+		}
+		#main-canvas, .center {
+			flex-grow: 0;
+			flex-shrink: 0;
+		}
+		.center {
+			margin-top: 20px;
 		}
 	</style>
 	
@@ -24,5 +33,6 @@
 </head>
 <body>
 	<canvas id="main-canvas" width="400" height="256"></canvas>
+	<div class="center">Press space to skip ahead.</div>
 </body>
 </html>
