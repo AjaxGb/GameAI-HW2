@@ -1,4 +1,6 @@
 
+export const TAU = 6.283185307179586477;
+
 export function drawSprite(ctx, img, x, y, rot=0, offx=0, offy=0) {
 	if (rot) {
 		ctx.save();
@@ -16,5 +18,30 @@ export function drawSprite(ctx, img, x, y, rot=0, offx=0, offy=0) {
 }
 
 export function randomAngle() {
-	return Math.random() * Math.PI * 2;
+	return Math.random() * TAU - Math.PI;
+}
+
+export function clamped(n, min, max) {
+	return Math.min(Math.max(n, min), max);
+}
+
+export function clampedAbs(n, max) {
+	return Math.min(Math.max(n, -max), max);
+}
+
+export function floorMod(n, d) {
+	return (n % d + d) % d;
+}
+
+export function normalizeAngle(a) {
+	return floorMod(a + Math.PI, TAU) - Math.PI;
+}
+
+export function removeWhere(arr, cond) {
+	let i = arr.length;
+	while (i--) {
+		if (cond(arr[i], i, arr)) {
+			arr.splice(i, 1);
+		}
+	}
 }

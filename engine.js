@@ -1,3 +1,4 @@
+import { removeWhere } from './utils.js';
 
 export default class Engine {
 	
@@ -15,15 +16,55 @@ export default class Engine {
 		this.frame = -1;
 		
 		this.timeCallbacks = [];
+		this.conditionCallbacks = [];
+		this.keyCallbacks = {
+			down:  {},
+			up:    {},
+		};
+		this.keyStates = {};
 		
 		init(this)
-			.then(() =>
+			.then(() => {
 				this.nextRenderID = requestAnimationFrame(
 					(ms) => {
 						// Set the initial millis first time around
 						this._realMillis = ms;
 						this.onRender(ms);
-					}));
+					})
+				
+				const keyHandler = (e) => {
+					if (event.type === 'keydown') {
+						if (this.keyStates[event.code] === true) return;
+						this.keyStates[event.code] = true;
+					}
+					if (event.type === 'keyup') {
+						if (this.keyStates[event.code] === false) return;
+						this.keyStates[event.code] = false;
+					}
+					
+					const action = event.type.substr(3);
+					const callbacks = this.keyCallbacks[action][e.code];
+					if (!callbacks) return;
+					
+					removeWhere(callbacks, c => {
+						if (c.ctrl != null && c.ctrl != e.ctrlKey)
+							return false;
+						if (c.shift != null && c.shift != e.shiftKey)
+							return false;
+						if (c.alt != null && c.alt != e.altKey)
+							return false;
+						c.callback();
+						return true;
+					});
+					
+					if (callbacks.length === 0) {
+						delete this.keyCallbacks[action][e.code];
+					}
+				};
+				
+				window.addEventListener('keydown', keyHandler);
+				window.addEventListener('keyup', keyHandler);
+			});
 	}
 	
 	get width() {
@@ -32,6 +73,10 @@ export default class Engine {
 	
 	get height() {
 		return this.canvas.height;
+	}
+	
+	get aabb() {
+		return [0, 0, this.width, this.height];
 	}
 	
 	loadImages(urls, prefix='', suffix='') {
@@ -71,6 +116,26 @@ export default class Engine {
 		});
 	}
 	
+	afterCondition(cond) {
+		return new Promise(resolve => {
+			this.conditionCallbacks.push({
+				condition: cond,
+				callback: resolve,
+			});
+		});
+	}
+	
+	afterKey(action, key,
+			ctrl=undefined, shift=undefined, alt=undefined) {
+		return new Promise(resolve => {
+			const actionMap = this.keyCallbacks[action];
+			(actionMap[key] || (actionMap[key] = [])).push({
+				callback: resolve,
+				ctrl, shift, alt,
+			});
+		});
+	}
+	
 	addObject(obj) {
 		this.objects.push(obj);
 		return obj;
@@ -93,6 +158,12 @@ export default class Engine {
 			this.timeCallbacks.shift().callback();
 		}
 		
+		removeWhere(this.conditionCallbacks, c => {
+			const done = c.condition(this);
+			if (done) c.callback();
+			return done;
+		});
+		
 		if (this.bgFill) {
 			ctx.fillStyle = this.bgFill;
 			ctx.fillRect(0, 0, this.width, this.height);
@@ -101,7 +172,17 @@ export default class Engine {
 		}
 		
 		for (let obj of this.objects) {
-			if (obj.enabled) obj.onRender(ctx, this.delta, this);
+			if (!obj.disabled && obj.onUpdate) {
+				obj.onUpdate(this.delta, this);
+			}
+		}
+		
+		removeWhere(this.objects, o => o.isDead);
+		
+		for (let obj of this.objects) {
+			if (!obj.disabled && obj.onRender) {
+				obj.onRender(ctx, this.delta, this);
+			}
 		}
 	}
 	
